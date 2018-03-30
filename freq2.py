@@ -151,12 +151,12 @@ def main():
 
     fc = FreqCounter()
     if args.create and os.path.exists(args.freqtable):
-        print "Frequency table already exists. "+args.freqtable
+        print("Frequency table already exists. "+args.freqtable)
         sys.exit(1)
 
     if not args.create:
         if not os.path.exists(args.freqtable):
-           print "Frequency Character file not found. - %s " % (args.freqtable)
+           print("Frequency Character file not found. - %s " % (args.freqtable))
            return
         fc.load(args.freqtable)
 
@@ -167,10 +167,10 @@ def main():
         try:
             filecontent = open(args.normalfile).read()
         except Exception as e:
-            print "Unable to open file. " + str(e)
+            print("Unable to open file. " + str(e))
             sys.exit(1)
         fc.tally_str(filecontent)
-    if args.measure: print fc.probability(args.measure, args.max_prob)
+    if args.measure: print(fc.probability(args.measure, args.max_prob))
     fc.save(args.freqtable)
 
 if __name__ == "__main__":
