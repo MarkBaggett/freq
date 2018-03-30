@@ -131,3 +131,47 @@ class FreqCounter(dict):
         return sum(map(lambda y:y.count, x._table.values()))
             
 
+
+def main():
+    import argparse
+    import os
+    parser=argparse.ArgumentParser()
+    parser.add_argument('-m','--measure',required=False,help='Measure likelihood of a given string',dest='measure')
+    parser.add_argument('-n','--normal',required=False,help='Update the table based on the following normal string',dest='normal')
+    parser.add_argument('-f','--normalfile',required=False,help='Update the table based on the contents of the normal file',dest='normalfile')
+    parser.add_argument('-p','--print',action='store_true',required=False,help='Print a table of the most likely letters in order',dest='printtable')
+    parser.add_argument('-c','--create',action='store_true',required=False,help='Create a new empty frequency table',dest='create')
+    parser.add_argument('-t','--toggle_case_sensitivity',action='store_true',required=False,help='Ignore case in all future frequecy tabulations',dest='toggle_case')
+    parser.add_argument('-M','--max_prob',required=False,default=40,type=int,help='Defines the maximum probability of any character combo. (Prevents "qu" from overpowering stats) Default 40',dest='max_prob')
+    parser.add_argument('-w','--weight',type=int,default = 1, required=False,help='Affects weight of promote, update and update file (default is 1)',dest='weight')
+    parser.add_argument('-e','--exclude',default = "\n\t~`!@#$%^&*()_+-", required=False,help='Provide a list of characters to ignore from the tabulations.',dest='exclude')
+    parser.add_argument('freqtable',help='File storing character frequencies.')
+
+    args=parser.parse_args()
+
+    fc = FreqCounter()
+    if args.create and os.path.exists(args.freqtable):
+        print "Frequency table already exists. "+args.freqtable
+        sys.exit(1)
+
+    if not args.create:
+        if not os.path.exists(args.freqtable):
+           print "Frequency Character file not found. - %s " % (args.freqtable)
+           return
+        fc.load(args.freqtable)
+
+    if args.printtable: fc.printtable()
+    if args.normal: fc.tally_str(args.normal, args.weight)
+    if args.toggle_case:  fc.ignorecase = not fc.ignorecase
+    if args.normalfile:
+        try:
+            filecontent = open(args.normalfile).read()
+        except Exception as e:
+            print "Unable to open file. " + str(e)
+            sys.exit(1)
+        fc.tally_str(filecontent)
+    if args.measure: print fc.probability(args.measure, args.max_prob)
+    fc.save(args.freqtable)
+
+if __name__ == "__main__":
+    main()
