@@ -20,11 +20,11 @@ class node():
         self._dirtycount = False
 
     def __getitem__(self,key):
-        if not self.parent.ignore_case:
-            return self._pairs[key]
-        else:
+        if self.parent.ignore_case and (key.islower() or key.isupper()):
             return  self._pairs[key.lower()] + self._pairs[key.upper()]
-        
+        else:
+            return self._pairs[key]            
+         
     def __setitem__(self,key,value):
         self._dirtycount = True
         self._pairs.update([key]*value)
@@ -98,7 +98,7 @@ class FreqCounter(dict):
     def _probability(self,twoletters, max_prob=40):
         if self[twoletters[0]].count == 0:
             return 0
-        if self.ignore_case:
+        if self.ignore_case and (twoletters[0].islower() or twoletters[0].isupper()):
             ignored_tot = sum([self[twoletters[0].lower()][eachlet] for eachlet in self.ignorechars]) + sum([self[twoletters[0].upper()][eachlet] for eachlet in self.ignorechars])
             let2 = self[twoletters[0].lower()][twoletters[1]] + self[twoletters[0].upper()][twoletters[1]]
             let1 = self[twoletters[0].lower()].count + self[twoletters[0].upper()].count
