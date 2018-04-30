@@ -16,10 +16,16 @@
 
 from __future__ import print_function
 from freq2 import *
-import BaseHTTPServer
+import six
+if six.PY2:
+    import BaseHTTPServer
+    import SocketServer
+    import urlparse
+else:
+    import http.server as BaseHTTPServer
+    import socketserver as SocketServer
+    import urllib.parse as urlparse
 import threading
-import SocketServer
-import urlparse
 import re
 import argparse
 
@@ -28,20 +34,34 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        (ignore, ignore, ignore, urlparams, ignore) = urlparse.urlsplit(self.path)
-        cmdstr=re.search("cmd=(?:measure|normal)",urlparams)
-        tgtstr =  re.search("tgt=",urlparams)
-        if not cmdstr or not tgtstr:
-            self.wfile.write('<html><body>API Documentation<br> http://%s:%s/?cmd=measure&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt&weight=&ltweight&gt </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
-            return
-        params={}
-        try:
-            for prm in urlparams.split("&"):
-                key,value = prm.split("=")
-                params[key]=value
-        except:
-            self.wfile.write('<html><body>Unable to parse the url. </body></html>')
-            return
+        (ignore, ignore, urlpath, urlparams, ignore) = urlparse.urlsplit(self.path)
+        cmdstr = tgtstr = None
+        print(urlparams)
+        if re.search("[\/](measure|normal)[\/].*?", urlpath):
+            print("REST API CALL", urlpath)
+            cmdstr = re.search(r"[\/](measure|normal)[\/].*$", urlpath)
+            tgtstr = re.search(r"[\/](measure|normal)[\/](.*)$", urlpath)
+            if not cmdstr or not tgtstr:
+                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/?cmd=measure&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt&weight=&ltweight&gt </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
+                return
+            params = {}
+            params["cmd"] = cmdstr.group(1)
+            params["tgt"] = tgtstr.group(2)
+            print(params)
+        else:
+            cmdstr=re.search("cmd=(?:measure|normal)",urlparams)
+            tgtstr =  re.search("tgt=",urlparams)
+            if not cmdstr or not tgtstr:
+                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/?cmd=measure&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt&weight=&ltweight&gt </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
+                return
+            params={}
+            try:
+                for prm in urlparams.split("&"):
+                    key,value = prm.split("=")
+                    params[key]=value
+            except:
+                self.wfile.write('<html><body>Unable to parse the url. </body></html>')
+                return
         if params["cmd"] == "normal":
             self.server.safe_print("cache cleared")
             try:
@@ -58,7 +78,7 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.server.fc_lock.release()
             self.wfile.write('<html><body>Frequency Table updated</body></html>') 
         elif params["cmd"] == "measure":
-            if self.server.cache.has_key(params["tgt"]):
+            if params["tgt"] in self.server.cache:
                 if self.server.verbose: self.server.safe_print ("Query from cache:", params["tgt"])
                 measure =  self.server.cache.get(params["tgt"])
             else:
@@ -70,12 +90,12 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 finally:
                     self.server.cache_lock.release()
                 if self.server.verbose>=2: self.server.safe_print ( "Server cache: ", str(self.server.cache))
-            self.wfile.write(str(measure))
+            self.wfile.write(str(measure).encode("LATIN-1"))
             return
     def log_message(self, format, *args):
         return
 
-class ThreadedFreqServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer, BaseHTTPServer.HTTPServer):
+class ThreadedFreqServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
     def __init__(self, *args,**kwargs):
         self.fc = FreqCounter()
         self.cache = {}
@@ -118,7 +138,7 @@ def main():
     parser.add_argument('-s','--save_interval',type=float,required=False,help='Number of minutes to wait before trying to save frequency table updates. Default is 10 minutes.  Set to 0 to never save.',default=10)
     parser.add_argument('port',type=int,help='You must provide a TCP Port to bind to')
     parser.add_argument('freq_table',help='You must provide the frequency table name (optionally including the path)')
-    parser.add_argument('-v','--verbose',action='count',required=False,help='Print verbose output to the server screen.  -vv is more verbose.')
+    parser.add_argument('-v','--verbose',action='count',default=0,required=False,help='Print verbose output to the server screen.  -vv is more verbose.')
 
     #args = parser.parse_args("-s 1 -vv 8081 english_lowercase.freq".split())
     args = parser.parse_args()
@@ -160,3 +180,4 @@ def main():
     
 if __name__=="__main__":
     main()
+
