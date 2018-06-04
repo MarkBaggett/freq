@@ -15,7 +15,7 @@
 #Thanks to @securitymapper for Testing & suggestions
 
 from __future__ import print_function
-from freq2 import *
+from freq import *
 import six
 if six.PY2:
     import BaseHTTPServer
@@ -37,22 +37,22 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
         (ignore, ignore, urlpath, urlparams, ignore) = urlparse.urlsplit(self.path)
         cmdstr = tgtstr = None
         print(urlparams)
-        if re.search("[\/](measure|normal)[\/].*?", urlpath):
+        if re.search("[\/](measure|measure1|measure2|normal)[\/].*?", urlpath):
             print("REST API CALL", urlpath)
-            cmdstr = re.search(r"[\/](measure|normal)[\/].*$", urlpath)
-            tgtstr = re.search(r"[\/](measure|normal)[\/](.*)$", urlpath)
+            cmdstr = re.search(r"[\/](measure|measure1|measure2|normal)[\/].*$", urlpath)
+            tgtstr = re.search(r"[\/](measure|measure1|measure2|normal)[\/](.*)$", urlpath)
             if not cmdstr or not tgtstr:
-                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/?cmd=measure&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt&weight=&ltweight&gt </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
+                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/measure/&ltstring&gt <br> http://%s:%s/normal/&ltstring&gt <br> </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
                 return
             params = {}
             params["cmd"] = cmdstr.group(1)
             params["tgt"] = tgtstr.group(2)
             print(params)
         else:
-            cmdstr=re.search("cmd=(?:measure|normal)",urlparams)
+            cmdstr=re.search("cmd=(?:measure|measure1|measure2|normal)",urlparams)
             tgtstr =  re.search("tgt=",urlparams)
             if not cmdstr or not tgtstr:
-                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/?cmd=measure&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt&weight=&ltweight&gt </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
+                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/?cmd=measure&tgt=&ltstring&gt <br> http://%s:%s/measure/&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt&weight=&ltweight&gt </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
                 return
             params={}
             try:
@@ -60,7 +60,7 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                     key,value = prm.split("=")
                     params[key]=value
             except:
-                self.wfile.write('<html><body>Unable to parse the url. </body></html>')
+                self.wfile.write('<html><body>Unable to parse the url. </body></html>'.encode("LATIN-1"))
                 return
         if params["cmd"] == "normal":
             self.server.safe_print("cache cleared")
@@ -76,8 +76,8 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.server.dirty_fc = True
             finally:
                 self.server.fc_lock.release()
-            self.wfile.write('<html><body>Frequency Table updated</body></html>') 
-        elif params["cmd"] == "measure":
+            self.wfile.write('<html><body>Frequency Table updated</body></html>'.encode("LATIN-1")) 
+        elif params["cmd"][:7] == "measure":
             if params["tgt"] in self.server.cache:
                 if self.server.verbose: self.server.safe_print ("Query from cache:", params["tgt"])
                 measure =  self.server.cache.get(params["tgt"])
@@ -90,6 +90,10 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 finally:
                     self.server.cache_lock.release()
                 if self.server.verbose>=2: self.server.safe_print ( "Server cache: ", str(self.server.cache))
+            if params["cmd"].endswith("1"):
+                measure = measure[0]
+            elif params["cmd"].endswith("2"):
+                measure = measure[1]
             self.wfile.write(str(measure).encode("LATIN-1"))
             return
     def log_message(self, format, *args):
