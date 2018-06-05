@@ -75,7 +75,7 @@ class FreqCounter(dict):
             self[eachpair[0]][eachpair[1]] = weight
 
   
-    def probability(self,line,max_prob=40):
+    def probability(self,line):
         """This function tells you how probable the letter combination provided is giving the character frequencies. Ex .probability("test") returns ~%35 """
         allpairs = re.findall(r"..", line)
         allpairs.extend(re.findall(r"..",line[1:]))
@@ -84,7 +84,7 @@ class FreqCounter(dict):
         probs = []
         for eachpair in allpairs:
             if (eachpair[0] not in self.ignorechars) and (eachpair[1] not in self.ignorechars):
-                probs.append(self._probability(eachpair, max_prob))
+                probs.append(self._probability(eachpair))
                 if args.verbose: print ("Probability of {0}: {1}".format(eachpair,probs))
         probability1 = sum(probs)/ len(probs) * 100
         if args.verbose:
@@ -96,10 +96,10 @@ class FreqCounter(dict):
              l1 = l2 = 0
              if (eachpair[0] not in self.ignorechars) and (eachpair[1] not in self.ignorechars):
                  l1 += self[eachpair[0]].count
-                 if self.ignore_case:
+                 if self.ignore_case and (eachpair[0].islower() or eachpair[0].isupper()):
                      l1 += self[eachpair[0].swapcase()].count
                  l2 += self[eachpair[0]][eachpair[1]]
-                 if self.ignore_case:
+                 if self.ignore_case and (eachpair[0].islower() or eachpair[0].isupper()):
                      l2 += self[eachpair[0].swapcase()][eachpair[1]]
                  totl1 += l1
                  totl2 += l2
@@ -111,8 +111,10 @@ class FreqCounter(dict):
         if args.verbose: print("PROBABILITY 2: {0} /{1} = {2}".format(totl2, totl1, probability2))
         return round(probability1,4),round(probability2,4)
 
-    def _probability(self,twoletters, max_prob=40):
-        if self[twoletters[0]].count == 0:
+    def _probability(self,twoletters):
+        if self.ignore_case and (self[twoletters[0]].count == 0 and self[twoletters[0].swapcase()].count == 0):
+            return 0
+        if not self.ignore_case and self[twoletters[0]].count == 0:
             return 0
         if self.ignore_case and (twoletters[0].islower() or twoletters[0].isupper()):
             ignored_tot = sum([self[twoletters[0].lower()][eachlet] for eachlet in self.ignorechars]) + sum([self[twoletters[0].upper()][eachlet] for eachlet in self.ignorechars])
@@ -164,7 +166,6 @@ if __name__ == "__main__":
     parser.add_argument('-v','--verbose',action='store_true',required=False,help='show calculation process',dest='verbose')
     parser.add_argument('-t','--toggle_case_sensitivity',action='store_true',required=False,help='Ignore case in all future frequecy tabulations',dest='toggle_case')
     parser.add_argument('-s','--case_sensitive',action='store_true',required=False,help='Consider case in calculations. Default ignores case.',dest='case_sensitive')
-    parser.add_argument('-M','--max_prob',required=False,default=40,type=int,help='Defines the maximum probability of any character combo. (Prevents "qu" from overpowering stats) Default 40',dest='max_prob')
     parser.add_argument('-w','--weight',type=int,default = 1, required=False,help='Affects weight of promote, update and update file (default is 1)',dest='weight')
     parser.add_argument('-e','--exclude',default = "\n\t~`!@#$%^&*()_+-", required=False,help='Provide a list of characters to ignore from the tabulations.',dest='exclude')
     parser.add_argument('freqtable',help='File storing character frequencies.')
@@ -199,7 +200,7 @@ if __name__ == "__main__":
             sys.exit(1)
         fc.tally_str(filecontent)
 
-    if args.measure: print(fc.probability(args.measure, args.max_prob))
+    if args.measure: print(fc.probability(args.measure))
     fc.save(args.freqtable)
 
 
