@@ -41,6 +41,7 @@ class FreqCounter(dict):
         self._table = defaultdict(lambda :node(self))
         self.ignore_case = False
         self.ignorechars = ""
+        self.verbose = "verbose" in kwargs
         
     def __getitem__(self,key):
         return self._table[key]
@@ -79,15 +80,15 @@ class FreqCounter(dict):
         """This function tells you how probable the letter combination provided is giving the character frequencies. Ex .probability("test") returns ~%35 """
         allpairs = re.findall(r"..", line)
         allpairs.extend(re.findall(r"..",line[1:]))
-        if args.verbose: print("All pairs: {0}".format(allpairs))
+        if self.verbose: print("All pairs: {0}".format(allpairs))
        #probability 1 is the average probability
         probs = []
         for eachpair in allpairs:
             if (eachpair[0] not in self.ignorechars) and (eachpair[1] not in self.ignorechars):
                 probs.append(self._probability(eachpair))
-                if args.verbose: print ("Probability of {0}: {1}".format(eachpair,probs))
+                if self.verbose: print ("Probability of {0}: {1}".format(eachpair,probs))
         probability1 = sum(probs)/ len(probs) * 100
-        if args.verbose:
+        if self.verbose:
             print("PROBABILITY 1: Average probability as percentage {0} \n\n".format(probability1))
         #probability2 is the Total word probabilty
         totl1 = 0 
@@ -103,12 +104,12 @@ class FreqCounter(dict):
                      l2 += self[eachpair[0].swapcase()][eachpair[1]]
                  totl1 += l1
                  totl2 += l2
-                 if args.verbose: print("Letter1:{0} Letter2:{1}  - This pair {2}:{3} {4}:{5}".format(totl1,totl2, eachpair[0],l1,eachpair[1],l2))          
+                 if self.verbose: print("Letter1:{0} Letter2:{1}  - This pair {2}:{3} {4}:{5}".format(totl1,totl2, eachpair[0],l1,eachpair[1],l2))          
         if (totl1 == 0) or (totl2 == 0):
             probability2 = 0
         else:
             probability2 = totl2/totl1 * 100
-        if args.verbose: print("PROBABILITY 2: {0} /{1} = {2}".format(totl2, totl1, probability2))
+        if self.verbose: print("PROBABILITY 2: {0} /{1} = {2}".format(totl2, totl1, probability2))
         return round(probability1,4),round(probability2,4)
 
     def _probability(self,twoletters):
@@ -172,7 +173,10 @@ if __name__ == "__main__":
 
     args=parser.parse_args()
 
-    fc = FreqCounter()
+    if args.verbose:
+        fc = FreqCounter(verbose=True)
+    else:
+        fc = FreqCounter()
     if args.create and os.path.exists(args.freqtable):
         print("Frequency table already exists. "+args.freqtable)
         sys.exit(1)

@@ -33,6 +33,7 @@ import argparse
 class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        self.send_header('Content-type','text/plain')
         self.end_headers()
         (ignore, ignore, urlpath, urlparams, ignore) = urlparse.urlsplit(self.path)
         cmdstr = tgtstr = None
@@ -42,7 +43,8 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
             cmdstr = re.search(r"[\/](measure|measure1|measure2|normal)[\/].*$", urlpath)
             tgtstr = re.search(r"[\/](measure|measure1|measure2|normal)[\/](.*)$", urlpath)
             if not cmdstr or not tgtstr:
-                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/measure/&ltstring&gt <br> http://%s:%s/normal/&ltstring&gt <br> </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
+                help_str = 'API Documentation \nhttp://%s:%s/measure/<string> \nhttp://%s:%s/normal/<string> \n' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1])
+                self.wfile.write(help_str.encode("Latin-1"))
                 return
             params = {}
             params["cmd"] = cmdstr.group(1)
@@ -52,7 +54,8 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
             cmdstr=re.search("cmd=(?:measure|measure1|measure2|normal)",urlparams)
             tgtstr =  re.search("tgt=",urlparams)
             if not cmdstr or not tgtstr:
-                self.wfile.write('<html><body>API Documentation<br> http://%s:%s/?cmd=measure&tgt=&ltstring&gt <br> http://%s:%s/measure/&ltstring&gt <br> http://%s:%s/?cmd=normal&tgt=&ltstring&gt&weight=&ltweight&gt </body></html>' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1]))
+                help_str = 'API Documentation\nhttp://%s:%s/?cmd=measure&tgt=<string> \nhttp://%s:%s/measure/<string> \nhttp://%s:%s/?cmd=normal&tgt=<string>&weight=<weight> \n' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1])
+                self.wfile.write(help_str.encode("LATIN-1"))
                 return
             params={}
             try:
