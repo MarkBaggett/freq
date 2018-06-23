@@ -12,7 +12,7 @@ While sitting in SANS SEC511 I listened to [`@sethmisenar`](https://twitter.com/
 - Two calculations - I've added a second frequency score that I've calculated differently.  It will requires some testing to see if it is more useful than the previous number in detecting random hosts.
 
 ### Version Compatibility:
-`freq.py` will work in either Python2 or Python3.  The web server freq_server.py will also be updated in the future.
+`freq.py` will work in either Python2 or Python3.  The web server `freq_server.py` will also be updated in the future.
 
 ### To Do:
 - Rewrite `freq_server.py` in Python 3
