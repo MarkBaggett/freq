@@ -6,10 +6,10 @@ While sitting in SANS SEC511 I listened to [`@sethmisenar`](https://twitter.com/
 
 ### Recent Improvements:
 - Only one table is required for case sensitve or insensitive lookups. The tables are all case sensitive.  You can turn off and on case sensitivity and the .probability lookups will do what is needed to make them case insensitive.
-- Ignored char - Like ignore_case the characters are only ignored in the calculations of the probability. They are not ignored in the building of the table
+- Ignored characters with `--exlcude` option - Like `ignore_case` the characters are only ignored in the calculations of the probability. They are not ignored in the building of the table.
 - Speed.  Like I said.  It was a proof of concept and never really built with any performance in mind.  This fixes that.
 - Accuracy.  Some errors in calulations were identified by Pepe Berta (thanks!).  This fixes those and several others.  If you find others let me know.
-- Two calculations - I've added a second frequency score that i've calculated differently.  It will requires some testing to see if it is more useful than the previous number in detecting random hosts.
+- Two calculations - I've added a second frequency score that I've calculated differently.  It will requires some testing to see if it is more useful than the previous number in detecting random hosts.
 
 ### Version Compatibility:
 `freq.py` will work in either Python2 or Python3.  The web server freq_server.py will also be updated in the future.
