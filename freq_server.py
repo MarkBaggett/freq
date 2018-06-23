@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 #freq_server.py by Mark Baggett
 #Twitter @MarkBaggett
 #github http://github.com/MarkBaggett/
