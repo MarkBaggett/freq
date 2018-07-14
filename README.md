@@ -14,6 +14,11 @@ While sitting in SANS SEC511 I listened to [`@sethmisenar`](https://twitter.com/
 ### Version Compatibility:
 `freq.py` will work in either Python2 or Python3.  The web server `freq_server.py` will also be updated in the future.
 
+Note that a systemd startup file is provided, although you will likely need to adjust paths to the script and `freqtable2018.freq` file. The provided sample assumes you've cloned this repository to /usr/local/share/freq/. Enable with something like the following, again substituting the appropraite paths:
+
+$ sudo systemctl enable /usr/local/share/freq/systemd/freq.service
+$ sudo systemctl start freq.service
+
 ### To Do:
 - Rewrite `freq_server.py` in Python 3
 - Add conversion tool from old freq tables to new??
