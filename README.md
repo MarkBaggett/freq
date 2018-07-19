@@ -10,6 +10,8 @@ While sitting in SANS SEC511 I listened to [`@sethmisenar`](https://twitter.com/
 - Speed.  Like I said.  It was a proof of concept and never really built with any performance in mind.  This fixes that.
 - Accuracy.  Some errors in calulations were identified by Pepe Berta (thanks!).  This fixes those and several others.  If you find others let me know.
 - Two calculations - I've added a second frequency score that I've calculated differently.  It will requires some testing to see if it is more useful than the previous number in detecting random hosts.
+- Multiple freq tables can be passed and loaded on the CLI then processed in the url.  For example: python3 freq_server.py 9000 files.freq dns.freq  Then query the url with the table name instead of measure like this http://127.0.0.1:9000/dns.freq/hostname or http://127.0.0.1:9000/dns.freq1.hostname for just measurement 1.
+
 
 ### Version Compatibility:
 `freq.py` will work in either Python2 or Python3.  The web server `freq_server.py` will also be updated in the future.
@@ -21,6 +23,3 @@ $ sudo systemctl enable /usr/local/share/freq/systemd/freq.service
 $ sudo systemctl start freq.service
 
 ### To Do:
-- Rewrite `freq_server.py` in Python 3
-- Add conversion tool from old freq tables to new??
-  - Probably a bad idea. Old tables dont have all the data required to create an accurate new table.

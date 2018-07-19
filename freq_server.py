@@ -39,10 +39,16 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
         (ignore, ignore, urlpath, urlparams, ignore) = urlparse.urlsplit(self.path)
         cmdstr = tgtstr = None
         print(urlparams)
-        if re.search("[\/](measure|measure1|measure2|normal)[\/].*?", urlpath):
+        tables = args.freq_table
+        tables += [x+"1" for x in args.freq_table]
+        tables += [x+"2" for x in args.freq_table]
+        legit_urls = r"[\/](measure|measure1|measure2|normal|{0})[\/].*?".format( "|".join(tables))
+        cmd_regex = r"[\/](measure|measure1|measure2|normal{0})[\/].*$".format( "|".join(tables))
+        tgtstr_regex = r"[\/](measure|measure1|measure2|normal|{0})[\/](.*)$".format( "|".join(tables))
+        if re.search(legit_urls, urlpath):
             print("REST API CALL", urlpath)
-            cmdstr = re.search(r"[\/](measure|measure1|measure2|normal)[\/].*$", urlpath)
-            tgtstr = re.search(r"[\/](measure|measure1|measure2|normal)[\/](.*)$", urlpath)
+            cmdstr = re.search(cmd_regex, urlpath)
+            tgtstr = re.search(tgtstr_regex, urlpath)
             if not cmdstr or not tgtstr:
                 help_str = 'API Documentation \nhttp://%s:%s/measure/<string> \nhttp://%s:%s/normal/<string> \n' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1])
                 self.wfile.write(help_str.encode("Latin-1"))
@@ -52,7 +58,8 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
             params["tgt"] = tgtstr.group(2)
             print(params)
         else:
-            cmdstr=re.search("cmd=(?:measure|measure1|measure2|normal)",urlparams)
+            cmd_regex = r"cmd=(?:measure|measure1|measure2|normal{0})".format( "|".join(tables))
+            cmdstr=re.search(cmd_regex,urlparams)
             tgtstr =  re.search("tgt=",urlparams)
             if not cmdstr or not tgtstr:
                 help_str = 'API Documentation\nhttp://%s:%s/?cmd=measure&tgt=<string> \nhttp://%s:%s/measure/<string> \nhttp://%s:%s/?cmd=normal&tgt=<string>&weight=<weight> \n' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1])
@@ -99,12 +106,31 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
             elif params["cmd"].endswith("2"):
                 measure = measure[1]
             self.wfile.write(str(measure).encode("LATIN-1"))
+        elif any([x.startswith(params["cmd"]) for x in args.freq_table]):
+            if params["tgt"] in self.server.cache:
+                if self.server.verbose: self.server.safe_print ("Query from cache:", params["tgt"])
+                measure =  self.server.cache.get(params["tgt"])
+            else:
+                if self.server.verbose: self.server.safe_print ( "Added to cache:", params["tgt"])
+                measure = self.server.fcs[params["cmd"]].probability(params["tgt"])
+                try:
+                    self.server.cache_lock.acquire()
+                    self.server.cache[params["tgt"]]=measure
+                finally:
+                    self.server.cache_lock.release()
+                if self.server.verbose>=2: self.server.safe_print ( "Server cache: ", str(self.server.cache))
+            if params["cmd"].endswith("1"):
+                measure = measure[0]
+            elif params["cmd"].endswith("2"):
+                measure = measure[1]
+            self.wfile.write(str(measure).encode("LATIN-1"))
             return
     def log_message(self, format, *args):
         return
 
 class ThreadedFreqServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
     def __init__(self, *args,**kwargs):
+        self.fcs = {}
         self.fc = FreqCounter()
         self.cache = {}
         self.cache_lock = threading.Lock()
@@ -140,12 +166,12 @@ class ThreadedFreqServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer)
             self.timer = threading.Timer(60*save_interval, self.save_freqtable, args = (save_path,save_interval))
             self.timer.start()
 
-def main():
+if __name__=="__main__":
     parser=argparse.ArgumentParser()
     parser.add_argument('-ip','--address',required=False,help='IP Address for the server to listen on.  Default is 127.0.0.1',default='127.0.0.1')
     parser.add_argument('-s','--save_interval',type=float,required=False,help='Number of minutes to wait before trying to save frequency table updates. Default is 10 minutes.  Set to 0 to never save.',default=10)
     parser.add_argument('port',type=int,help='You must provide a TCP Port to bind to')
-    parser.add_argument('freq_table',help='You must provide the frequency table name (optionally including the path)')
+    parser.add_argument('freq_table',nargs="*", help='You must provide the frequency table name (optionally including the path)')
     parser.add_argument('-v','--verbose',action='count',default=0,required=False,help='Print verbose output to the server screen.  -vv is more verbose.')
 
     #args = parser.parse_args("-s 1 -vv 8081 english_lowercase.freq".split())
@@ -153,7 +179,18 @@ def main():
 
     #Setup the server.
     server = ThreadedFreqServer((args.address, args.port), freqapi)
-    server.fc.load(args.freq_table)
+
+    #Load Each of the Frequency Table
+    for eachtable in args.freq_table:
+        server.fcs[eachtable] = FreqCounter()
+        try:
+            server.fcs[eachtable].load(eachtable)
+        except:
+            del server.fcs[eachtable]
+            raise(Exception("The frequency table {0} was not found."))
+
+    #setup default freq_table
+    server.fc = server.fcs[args.freq_table[0]]
     server.verbose = args.verbose
     #Schedule the first save interval unless save_interval was set to 0.
     if args.save_interval:
@@ -186,6 +223,4 @@ def main():
         server.timer.cancel()
     server.safe_print("Server has stopped.")
     
-if __name__=="__main__":
-    main()
 
