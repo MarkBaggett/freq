@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #freq_server.py by Mark Baggett
 #Twitter @MarkBaggett
 #github http://github.com/MarkBaggett/
