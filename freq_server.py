@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 #freq_server.py by Mark Baggett
 #Twitter @MarkBaggett
 #github http://github.com/MarkBaggett/
@@ -7,10 +8,10 @@
 #python freq_server.py 8080 english_lowercase.freq
 #
 #Now you can query the API to measure the character frequency of its characters.  
-#wget http://127.0.0.1:8080/cmd=measure\&tgt=measurethisstring
+#wget http://127.0.0.1:8080/?cmd=measure\&tgt=measurethisstring
 #
 #You can also mark a string as normal.  NOTE: There is a performance impact to updating via the API.  Use CLI freq.py to update tables instead.
-#wget http://127.0.0.1:8080/cmd=normal\&tgt=UpdateFreqWithTheseChars&weight=10
+#wget http://127.0.0.1:8080/?cmd=normal\&tgt=UpdateFreqWithTheseChars&weight=10
 #
 #Thanks to @securitymapper for Testing & suggestions
 
