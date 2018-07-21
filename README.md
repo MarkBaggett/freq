@@ -14,7 +14,7 @@ While sitting in SANS SEC511 I listened to [`@sethmisenar`](https://twitter.com/
 
 
 ### Version Compatibility:
-`freq.py` will work in either Python2 or Python3, but ships as a python3 script.
+Both `freq.py` and `freq_server.py` will work in either Python2 or Python3, but ship as a python3 script.
 
 ### System-level Service Startup:
 A systemd startup file is provided, although you will likely need to adjust paths to the script and `freqtable2018.freq` file. The provided sample assumes you've cloned this repository to /usr/local/share/freq/. Enable with something like the following, again substituting the appropriate paths:
