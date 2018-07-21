@@ -29,6 +29,7 @@ else:
 import threading
 import re
 import argparse
+import os
 
 
 class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -39,9 +40,9 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
         (ignore, ignore, urlpath, urlparams, ignore) = urlparse.urlsplit(self.path)
         cmdstr = tgtstr = None
         print(urlparams)
-        tables = args.freq_table
-        tables += [x+"1" for x in args.freq_table]
-        tables += [x+"2" for x in args.freq_table]
+        tables = freqtables
+        tables += [x+"1" for x in freqtables]
+        tables += [x+"2" for x in freqtables]
         legit_urls = r"[\/](measure|measure1|measure2|normal|{0})[\/].*?".format( "|".join(tables))
         cmd_regex = r"[\/](measure|measure1|measure2|normal{0})[\/].*$".format( "|".join(tables))
         tgtstr_regex = r"[\/](measure|measure1|measure2|normal|{0})[\/](.*)$".format( "|".join(tables))
@@ -106,7 +107,7 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
             elif params["cmd"].endswith("2"):
                 measure = measure[1]
             self.wfile.write(str(measure).encode("LATIN-1"))
-        elif any([x.startswith(params["cmd"]) for x in args.freq_table]):
+        elif any([x.startswith(params["cmd"]) for x in freqtables]):
             if params["tgt"] in self.server.cache:
                 if self.server.verbose: self.server.safe_print ("Query from cache:", params["tgt"])
                 measure =  self.server.cache.get(params["tgt"])
@@ -176,25 +177,31 @@ if __name__=="__main__":
 
     #args = parser.parse_args("-s 1 -vv 8081 english_lowercase.freq".split())
     args = parser.parse_args()
+    
+    #split paths and filenames on frequency tables
+    freqtables = list(map(lambda x:x[1], map(os.path.split, args.freq_table)))
 
     #Setup the server.
     server = ThreadedFreqServer((args.address, args.port), freqapi)
 
     #Load Each of the Frequency Table
     for eachtable in args.freq_table:
-        server.fcs[eachtable] = FreqCounter()
+        path,tablename = os.path.split(eachtable)
+        server.fcs[tablename] = FreqCounter()
+
         try:
-            server.fcs[eachtable].load(eachtable)
+            server.fcs[tablename].load(eachtable)
         except:
+            err = "********** Unable to load Frequency table {0}. ************".format(eachtable)
+            raise(Exception(err))
             del server.fcs[eachtable]
-            raise(Exception("The frequency table {0} was not found."))
 
     #setup default freq_table
-    server.fc = server.fcs[args.freq_table[0]]
+    server.fc = server.fcs[freqtables[0]]
     server.verbose = args.verbose
     #Schedule the first save interval unless save_interval was set to 0.
     if args.save_interval:
-        server.timer = threading.Timer(60 *args.save_interval, server.save_freqtable, args = (args.freq_table, args.save_interval))
+        server.timer = threading.Timer(60 *args.save_interval, server.save_freqtable, args = (args.freq_table[0], args.save_interval))
         server.timer.start()
  
     #start the server
@@ -214,7 +221,7 @@ if __name__=="__main__":
         server.timer.cancel()
         try:
             server.fc_lock.acquire()
-            server.fc.save(args.freq_table)
+            server.fc.save(args.freq_table[0])
             server.fc_lock.release()
         except:
             server.safe_print("[!] An error occured during the final save.")
