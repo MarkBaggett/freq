@@ -90,15 +90,16 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.server.fc_lock.release()
             self.wfile.write('<html><body>Frequency Table updated</body></html>'.encode("LATIN-1")) 
         elif params["cmd"][:7] == "measure":
-            if params["tgt"] in self.server.cache:
+            cache_key = "{0}".format(params["tgt"])
+            if cache_key in self.server.cache:
                 if self.server.verbose: self.server.safe_print ("Query from cache:", params["tgt"])
-                measure =  self.server.cache.get(params["tgt"])
+                measure =  self.server.cache.get(cache_key)
             else:
                 if self.server.verbose: self.server.safe_print ( "Added to cache:", params["tgt"])
                 measure = self.server.fc.probability(params["tgt"])
                 try:
                     self.server.cache_lock.acquire()
-                    self.server.cache[params["tgt"]]=measure
+                    self.server.cache[cache_key]=measure
                 finally:
                     self.server.cache_lock.release()
                 if self.server.verbose>=2: self.server.safe_print ( "Server cache: ", str(self.server.cache))
@@ -108,15 +109,16 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 measure = measure[1]
             self.wfile.write(str(measure).encode("LATIN-1"))
         elif any([x.startswith(params["cmd"]) for x in freqtables]):
-            if params["tgt"] in self.server.cache:
-                if self.server.verbose: self.server.safe_print ("Query from cache:", params["tgt"])
-                measure =  self.server.cache.get(params["tgt"])
+            cache_key = "{0}:{1}".format(params["cmd"], params["tgt"])
+            if cache_key in self.server.cache:
+                if self.server.verbose: self.server.safe_print ("Query from cache:",cache_key, params["tgt"])
+                measure =  self.server.cache.get(cache_key)
             else:
-                if self.server.verbose: self.server.safe_print ( "Added to cache:", params["tgt"])
+                if self.server.verbose: self.server.safe_print ( "Added to cache:",cache_key, params["tgt"])
                 measure = self.server.fcs[params["cmd"]].probability(params["tgt"])
                 try:
                     self.server.cache_lock.acquire()
-                    self.server.cache[params["tgt"]]=measure
+                    self.server.cache[cache_key]=measure
                 finally:
                     self.server.cache_lock.release()
                 if self.server.verbose>=2: self.server.safe_print ( "Server cache: ", str(self.server.cache))
@@ -181,9 +183,7 @@ if __name__=="__main__":
     
     #split paths and filenames on frequency tables
     freqtables = list(map(lambda x:x[1], map(os.path.split, args.freq_table)))
-    tables = freqtables
-    tables += [x+"1" for x in freqtables]
-    tables += [x+"2" for x in freqtables]
+
 
     #Setup the server.
     server = ThreadedFreqServer((args.address, args.port), freqapi)
@@ -196,8 +196,12 @@ if __name__=="__main__":
             server.fcs[tablename].load(eachtable)
         except:
             err = "********** Unable to load Frequency table {0}. ************".format(eachtable)
-            raise(Exception(err))
-            del server.fcs[eachtable]
+            raiseeerver.fcs[eachtable]
+
+    #add psuedo table names for the two measurements
+    tables = list(freqtables)
+    tables += [x+"1" for x in freqtables]
+    tables += [x+"2" for x in freqtables]
 
     #setup default freq_table
     server.fc = server.fcs[freqtables[0]]
