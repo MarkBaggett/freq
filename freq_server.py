@@ -43,9 +43,6 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
         (ignore, ignore, urlpath, urlparams, ignore) = urlparse.urlsplit(self.path)
         cmdstr = tgtstr = None
         if self.server.verbose: self.server.safe_print(urlparams)
-        legit_urls = r"[\/](measure|measure1|measure2|normal|{0})[\/].*?".format( "|".join(tables))
-        cmd_regex = r"[\/](measure|measure1|measure2|normal{0})[\/].*$".format( "|".join(tables))
-        tgtstr_regex = r"[\/](measure|measure1|measure2|normal|{0})[\/](.*)$".format( "|".join(tables))
         if re.search(legit_urls, urlpath):
             if self.server.verbose: self.server.safe_print("REST API CALL", urlpath)
             cmdstr = re.search(cmd_regex, urlpath)
@@ -58,10 +55,9 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
             params["cmd"] = cmdstr.group(1)
             params["tgt"] = tgtstr.group(2)
         else:
-            if self.server.verbose: self.server.safe_print("STANDARD API CALL", urlpath)
-            cmd_regex = r"cmd=(?:measure|measure1|measure2|normal{0})".format( "|".join(tables))
-            cmdstr=re.search(cmd_regex,urlparams)
-            tgtstr =  re.search("tgt=",urlparams)
+            if self.server.verbose: self.server.safe_print("STANDARD API CALL", urlpath)        
+            cmdstr=re.search(r"cmd=",urlparams)
+            tgtstr =  re.search(r"tgt=",urlparams)
             if not cmdstr or not tgtstr:
                 help_str = 'API Documentation\nhttp://%s:%s/?cmd=measure&tgt=<string> \nhttp://%s:%s/measure/<string> \nhttp://%s:%s/?cmd=normal&tgt=<string>&weight=<weight> \n' % (self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1],self.server.server_address[0], self.server.server_address[1])
                 self.wfile.write(help_str.encode("LATIN-1"))
@@ -202,6 +198,11 @@ if __name__=="__main__":
     tables = list(freqtables)
     tables += [x+"1" for x in freqtables]
     tables += [x+"2" for x in freqtables]
+
+    #build regex for parsing urls based on table names
+    legit_urls = r"[\/](measure|measure1|measure2|normal|{0})[\/].*?".format( "|".join(tables))
+    cmd_regex = r"[\/](measure|measure1|measure2|normal|{0})[\/].*$".format( "|".join(tables))
+    tgtstr_regex = r"[\/](measure|measure1|measure2|normal|{0})[\/](.*)$".format( "|".join(tables))
 
     #setup default freq_table
     server.fc = server.fcs[freqtables[0]]
