@@ -30,19 +30,19 @@ import threading
 import re
 import argparse
 import os
+import resource
 
 
 class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
+        print("Currently %s threads are active." % (threading.activeCount()))
+        print("Memory usage: %s (kb)" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         self.send_response(200)
         self.send_header('Content-type','text/plain')
         self.end_headers()
         (ignore, ignore, urlpath, urlparams, ignore) = urlparse.urlsplit(self.path)
         cmdstr = tgtstr = None
         print(urlparams)
-        tables = freqtables
-        tables += [x+"1" for x in freqtables]
-        tables += [x+"2" for x in freqtables]
         legit_urls = r"[\/](measure|measure1|measure2|normal|{0})[\/].*?".format( "|".join(tables))
         cmd_regex = r"[\/](measure|measure1|measure2|normal{0})[\/].*$".format( "|".join(tables))
         tgtstr_regex = r"[\/](measure|measure1|measure2|normal|{0})[\/](.*)$".format( "|".join(tables))
@@ -126,6 +126,7 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 measure = measure[1]
             self.wfile.write(str(measure).encode("LATIN-1"))
             return
+
     def log_message(self, format, *args):
         return
 
@@ -180,6 +181,9 @@ if __name__=="__main__":
     
     #split paths and filenames on frequency tables
     freqtables = list(map(lambda x:x[1], map(os.path.split, args.freq_table)))
+    tables = freqtables
+    tables += [x+"1" for x in freqtables]
+    tables += [x+"2" for x in freqtables]
 
     #Setup the server.
     server = ThreadedFreqServer((args.address, args.port), freqapi)
@@ -188,7 +192,6 @@ if __name__=="__main__":
     for eachtable in args.freq_table:
         path,tablename = os.path.split(eachtable)
         server.fcs[tablename] = FreqCounter()
-
         try:
             server.fcs[tablename].load(eachtable)
         except:
@@ -199,6 +202,7 @@ if __name__=="__main__":
     #setup default freq_table
     server.fc = server.fcs[freqtables[0]]
     server.verbose = args.verbose
+
     #Schedule the first save interval unless save_interval was set to 0.
     if args.save_interval:
         server.timer = threading.Timer(60 *args.save_interval, server.save_freqtable, args = (args.freq_table[0], args.save_interval))
@@ -215,17 +219,17 @@ if __name__=="__main__":
         
     server.safe_print("Control-C hit: Exiting server...")
     server.safe_print("Web API Disabled...")
-    if server.dirty_fc:
+    if args.save_interval and server.dirty_fc:
         server.safe_print("The Frequency counter has changed since the last save interval. Saving final update.")
         server.exitthread.set()
         server.timer.cancel()
         try:
             server.fc_lock.acquire()
             server.fc.save(args.freq_table[0])
-            server.fc_lock.release()
+            server.fc_lock.release
         except:
             server.safe_print("[!] An error occured during the final save.")
-    else:
+    elif args.save_interval:
         server.safe_print( "No Changes made since last file save.  Canceling scheduled save...")
         server.timer.cancel()
     server.safe_print("Server has stopped.")
