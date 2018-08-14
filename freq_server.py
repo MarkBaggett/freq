@@ -231,7 +231,7 @@ if __name__=="__main__":
         try:
             server.fc_lock.acquire()
             server.fc.save(args.freq_table[0])
-            server.fc_lock.release
+            server.fc_lock.release()
         except:
             server.safe_print("[!] An error occured during the final save.")
     elif args.save_interval:
