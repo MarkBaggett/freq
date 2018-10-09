@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import division
+import sys
 import string
 import re
 import weakref
@@ -197,13 +198,9 @@ if __name__ == "__main__":
     if args.verbose: print("Ignoring Case: {0}".format(fc.ignore_case))
     if args.verbose: print("Ignoring Characters: {0}".format(fc.ignorechars))
     if args.normalfile:
-        try:
-            filecontent = open(args.normalfile).read()
-        except Exception as e:
-            print("Unable to open file. " + str(e))
-            sys.exit(1)
-        fc.tally_str(filecontent)
-
+        with open(args.normalfile,"rb") as filehandle:
+            for eachline in filehandle:
+                fc.tally_str(eachline.decode("latin1"))
     if args.measure: print(fc.probability(args.measure))
     fc.save(args.freqtable)
 

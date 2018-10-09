@@ -104,14 +104,18 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
             elif params["cmd"].endswith("2"):
                 measure = measure[1]
             self.wfile.write(str(measure).encode("LATIN-1"))
-        elif any([x.startswith(params["cmd"]) for x in freqtables]):
-            cache_key = "{0}:{1}".format(params["cmd"], params["tgt"])
+        elif any([params["cmd"].startswith(x) for x in freqtables]):
+            table = params['cmd']
+            if table.endswith("1") or table.endswith("2"):
+                table = table[:-1]
+            cache_key = "{0}:{1}".format(table, params["tgt"])
+            if self.server.verbose: self.server.safe_print("Call to table ", params['cmd'])  
             if cache_key in self.server.cache:
                 if self.server.verbose: self.server.safe_print ("Query from cache:",cache_key, params["tgt"])
                 measure =  self.server.cache.get(cache_key)
             else:
                 if self.server.verbose: self.server.safe_print ( "Added to cache:",cache_key, params["tgt"])
-                measure = self.server.fcs[params["cmd"]].probability(params["tgt"])
+                measure = self.server.fcs[table].probability(params["tgt"])
                 try:
                     self.server.cache_lock.acquire()
                     self.server.cache[cache_key]=measure
@@ -124,7 +128,9 @@ class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
                 measure = measure[1]
             self.wfile.write(str(measure).encode("LATIN-1"))
             return
-
+        else:
+            print("Invalid command {} or target {}".format(params["cmd"], params["tgt"]))
+          
     def log_message(self, format, *args):
         return
 
@@ -214,7 +220,8 @@ if __name__=="__main__":
         server.timer.start()
  
     #start the server
-    print('Server is Ready. http://%s:%s/?cmd=measure&tgt=astring' % (args.address, args.port))
+    print('Server is Ready. http://%s:%s/<command>/<string>' % (args.address, args.port))
+    print("Commands include {}".format(cmd_regex))
     print('[?] - Remember: If you are going to call the api with wget, curl or something else from the bash prompt you need to escape the & with \& \n\n')
     while True:
         try:
