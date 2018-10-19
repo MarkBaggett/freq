@@ -177,7 +177,7 @@ if __name__=="__main__":
     parser.add_argument('-ip','--address',required=False,help='IP Address for the server to listen on.  Default is 127.0.0.1',default='127.0.0.1')
     parser.add_argument('-s','--save_interval',type=float,required=False,help='Number of minutes to wait before trying to save frequency table updates. Default is 10 minutes.  Set to 0 to never save.',default=10)
     parser.add_argument('port',type=int,help='You must provide a TCP Port to bind to')
-    parser.add_argument('freq_table',nargs="*", help='You must provide the frequency table name (optionally including the path)')
+    parser.add_argument('freq_table',nargs="+", help='You must provide the frequency table name (optionally including the path)')
     parser.add_argument('-v','--verbose',action='count',default=0,required=False,help='Print verbose output to the server screen.  -vv is more verbose.')
 
     #args = parser.parse_args("-s 1 -vv 8081 english_lowercase.freq".split())
