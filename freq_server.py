@@ -30,13 +30,13 @@ import threading
 import re
 import argparse
 import os
-import resource
+#import resource
 
 
 class freqapi(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.server.verbose: self.server.safe_print("Currently %s threads are active." % (threading.activeCount()))
-        if self.server.verbose: self.server.safe_print("Memory usage: %s (kb)" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+        #if self.server.verbose: self.server.safe_print("Memory usage: %s (kb)" % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         self.send_response(200)
         self.send_header('Content-type','text/plain')
         self.end_headers()

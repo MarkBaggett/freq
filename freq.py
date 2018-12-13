@@ -7,7 +7,6 @@ import weakref
 import json
 from collections import Counter
 from collections import defaultdict
-from collections import Mapping
 
 class node():
     """ Assigning a weight actually adds that value.  It doesn't set it to that value.
