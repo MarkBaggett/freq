@@ -86,7 +86,10 @@ class FreqCounter(dict):
             if (eachpair[0] not in self.ignorechars) and (eachpair[1] not in self.ignorechars):
                 probs.append(self._probability(eachpair))
                 if self.verbose: print ("Probability of {0}: {1}".format(eachpair,probs))
-        average_probability = sum(probs)/ len(probs) * 100
+        if probs:
+            average_probability = sum(probs)/ len(probs) * 100
+        else:
+            average_probability = 0
         if self.verbose:
             print("Average Probability: Average probability as percentage {0} \n\n".format(average_probability))
         totl1 = 0
