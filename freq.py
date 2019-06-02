@@ -86,10 +86,12 @@ class FreqCounter(dict):
             if (eachpair[0] not in self.ignorechars) and (eachpair[1] not in self.ignorechars):
                 probs.append(self._probability(eachpair))
                 if self.verbose: print ("Probability of {0}: {1}".format(eachpair,probs))
+            elif self.verbose:
+                print("Ignored this pair because I am ignoreing {}",format(self.ignorechars))
         if probs:
             average_probability = sum(probs)/ len(probs) * 100
         else:
-            average_probability = 0
+            average_probability = 0.0
         if self.verbose:
             print("Average Probability: Average probability as percentage {0} \n\n".format(average_probability))
         totl1 = 0
@@ -107,7 +109,7 @@ class FreqCounter(dict):
                  totl2 += l2
                  if self.verbose: print("Letter1:{0} Letter2:{1}  - This pair {2}:{3} {4}:{5}".format(totl1,totl2, eachpair[0],l1,eachpair[1],l2))
         if (totl1 == 0) or (totl2 == 0):
-            total_word_probability = 0
+            total_word_probability = 0.0
         else:
             total_word_probability = totl2/totl1 * 100
         if self.verbose: print("Total Word Probability: {0} /{1} = {2}".format(totl2, totl1, total_word_probability))
@@ -115,16 +117,20 @@ class FreqCounter(dict):
 
     def _probability(self,twoletters):
         if self.ignore_case and (self[twoletters[0]].count == 0 and self[twoletters[0].swapcase()].count == 0):
-            return 0
+            return 0.0
         if not self.ignore_case and self[twoletters[0]].count == 0:
-            return 0
+            return 0.0
         if self.ignore_case and (twoletters[0].islower() or twoletters[0].isupper()):
             ignored_tot = sum([self[twoletters[0].lower()][eachlet] for eachlet in self.ignorechars]) + sum([self[twoletters[0].upper()][eachlet] for eachlet in self.ignorechars])
             let2 = self[twoletters[0].lower()][twoletters[1]] + self[twoletters[0].upper()][twoletters[1]]
             let1 = self[twoletters[0].lower()].count + self[twoletters[0].upper()].count
+            if let1 - ignored_tot == 0:
+                return 0.0
             return let2/(let1-ignored_tot)
         else:
             ignored_tot = sum([self[twoletters[0]][eachlet] for eachlet in self.ignorechars])
+            if self[twoletters[0]].count - ignored_tot == 0:
+                return 0.0
             return self[twoletters[0]][twoletters[1]] / (self[twoletters[0]].count - ignored_tot)
 
     def save(self,filename):
