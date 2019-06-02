@@ -198,7 +198,7 @@ if __name__=="__main__":
             server.fcs[tablename].load(eachtable)
         except:
             err = "********** Unable to load Frequency table {0}. ************".format(eachtable)
-            raiseeerver.fcs[eachtable]
+            raise(Exception(err))
 
     #add psuedo table names for the two measurements
     tables = list(freqtables)
