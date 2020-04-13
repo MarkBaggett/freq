@@ -44,7 +44,7 @@ class node():
         # TODO: should consider using the __addr__ magic method instead
         # since the described behavior is this instead
         self._dirtycount = True
-        self._pairs.update([key]*value)
+        self._pairs[key] += value
 
     @property
     def count(self):
