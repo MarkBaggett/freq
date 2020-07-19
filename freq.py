@@ -319,6 +319,15 @@ if __name__ == "__main__":
         dest='verbose'
     )
 
+    parser.add_argument(
+        '-b',
+        '--bulk',
+        default=None,
+        required=False,
+        help='Measure every line in a file.',
+        dest='bulk'
+    )
+
     # TODO: break these up as well
     parser.add_argument('-t','--toggle_case_sensitivity',action='store_true',required=False,help='Ignore case in all future frequecy tabulations',dest='toggle_case')
     parser.add_argument('-s','--case_sensitive',action='store_true',required=False,help='Consider case in calculations. Default ignores case.',dest='case_sensitive')
@@ -342,7 +351,6 @@ if __name__ == "__main__":
            raise(Exception("File not found."))
         fc.load(args.freqtable)
 
-
     if args.printtable: 
         fc.printtable()
     if args.normal: 
@@ -361,4 +369,10 @@ if __name__ == "__main__":
                 fc.tally_str(eachline.decode("latin1"))
     if args.measure: 
         print(fc.probability(args.measure))
+    if args.bulk:
+        with open(args.bulk,"rt") as filehandle:
+            for eachline in filehandle:
+                print(fc.probability(eachline))
+                
     fc.save(args.freqtable)
+1
