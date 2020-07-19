@@ -372,7 +372,7 @@ if __name__ == "__main__":
     if args.bulk:
         with open(args.bulk,"rt") as filehandle:
             for eachline in filehandle:
-                print(fc.probability(eachline))
+                print(fc.probability(eachline),"-",eachline)
                 
     fc.save(args.freqtable)
 1
